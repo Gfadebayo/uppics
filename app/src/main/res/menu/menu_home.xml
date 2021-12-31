@@ -1,0 +1,42 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.exzell.uppics.MainActivity">
+
+
+    <item android:id="@+id/action_user"
+        android:title="User"
+        app:showAsAction="always"
+        app:actionLayout="@layout/partial_image"/>
+
+    <item android:id="@+id/action_sort"
+        android:icon="@drawable/ic_sort"
+        app:showAsAction="always"
+        android:title="@string/sort">
+
+        <menu>
+
+            <group android:checkableBehavior="single">
+
+                <item android:id="@+id/action_votes"
+                    android:title="@string/votes"
+                    android:checked="true" />
+
+                <item android:id="@+id/action_title"
+                    android:title="@string/title" />
+
+                <item android:id="@+id/action_time"
+                    android:title="@string/time" />
+            </group>
+
+            <item android:id="@+id/action_order"
+                android:title="@string/ascending"
+                android:checkable="true"
+                android:checked="true" />
+        </menu>
+    </item>
+
+    <item android:id="@+id/action_logout"
+        app:showAsAction="never"
+        android:title="Sign out" />
+</menu>

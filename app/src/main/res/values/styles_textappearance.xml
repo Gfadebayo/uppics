@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Small.Montserrat" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/montserrat_regular</item>
+    </style>
+
+    <style name="LabelLarge.Montserrat" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/montserrat_regular</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Subtitle1.Montserrat" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="fontFamily">@font/montserrat_regular</item>
+    </style>
+
+    <style name="Caption.Montserrat" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="fontFamily">@font/montserrat_regular</item>
+    </style>
+
+    <style name="BodyLarge.Montserrat" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/montserrat_regular</item>
+    </style>
+
+    <style name="BodySmall.Ash" parent="TextAppearance.Material3.BodySmall">
+    </style>
+</resources>

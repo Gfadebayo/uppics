@@ -1,0 +1,40 @@
+<resources>
+    <string name="app_name">UpPics</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="posts">Posts</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="hello_first_fragment">Hello first fragment</string>
+    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+    <string name="don_t_have_an_account_sign_up">Don\'t have an account? Sign up</string>
+    <string name="already_have_an_account_sign_in">Already have an account? Sign in</string>
+    <string name="sign_in">Sign in</string>
+    <string name="forgot_password">Forgot password</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="sign_up">Sign up</string>
+    <string name="error_occured">An Error occurred</string>
+    <string name="try_again">Try again</string>
+    <string name="field_empty">Field is empty</string>
+    <string name="post">Post</string>
+    <string name="description">Description</string>
+    <string name="signing_up_wait">Signing up, Please wait…</string>
+    <string name="signing_in_wait">Signing in, Please wait...</string>
+    <string name="email_sent_success">Email sent successfully</string>
+    <string name="password_length_error">Password should be more than 8 characters</string>
+    <string name="create_post">Create Post</string>
+    <string name="ascending">Ascending</string>
+    <string name="time">Time</string>
+    <string name="title">Title</string>
+    <string name="votes">Votes</string>
+    <string name="sort">Sort</string>
+    <string name="name">Name</string>
+    <string name="update">Update</string>
+    <string name="you">You</string>
+    <string name="fail_save_image">Failed to save image</string>
+    <string name="download_success">Downloaded successfully</string>
+    <string name="open">Open</string>
+</resources>

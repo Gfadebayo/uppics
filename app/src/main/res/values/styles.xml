@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style parent="Widget.Material3.TextInputLayout.OutlinedBox" name="DefaultTextInputLayout">
+        <item name="hintAnimationEnabled">true</item>
+        <item name="hintEnabled">true</item>
+        <item name="expandedHintEnabled">true</item>
+    </style>
+
+    <style parent="Widget.Material3.CircularProgressIndicator" name="DefaultCircularIndicator">
+        <item name="android:indeterminate">true</item>
+        <item name="indicatorSize">80dp</item>
+        <item name="hideAnimationBehavior">inward</item>
+<!--        <item name="showAnimationBehavior">inward</item>-->
+        <item name="indicatorDirectionCircular">counterclockwise</item>
+        <item name="trackThickness">2dp</item>
+        <item name="trackColor">?attr/colorPrimaryInverse</item>
+    </style>
+
+    <style parent="ShapeAppearance.Material3.LargeComponent" name="Shape.Radius.16">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="CenterIconButton" parent="Widget.Material3.Button.UnelevatedButton">
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="iconTint">?attr/colorContainer</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">?attr/colorContainer</item>
+        <item name="iconSize">24dp</item>
+        <item name="iconGravity">textEnd</item>
+        <item name="iconPadding">0dp</item>
+    </style>
+
+    <style name="WrapButton" parent="Widget.Material3.Button.ElevatedButton">
+<!--        <item name="android:paddingLeft">4dp</item>-->
+        <item name="android:minHeight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:padding">4dp</item>
+        <item name="iconPadding">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="materialThemeOverlay">@style/ThemeOverlay.WrapButton</item>
+    </style>
+
+    <style name="ThemeOverlay.WrapButton" parent="">
+        <item name="colorContainer">@android:color/transparent</item>
+        <item name="colorOnContainer">?attr/colorPrimary</item>
+    </style>
+</resources>
