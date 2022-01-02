@@ -16,7 +16,12 @@ import com.google.firebase.storage.ktx.storage
 import com.google.firebase.storage.ktx.storageMetadata
 import timber.log.Timber
 
-typealias UserChangeCallback = (User) -> Unit
+/**
+ * A function that will be called anytime a user data changes
+ * The Boolean tells if the user currently using the app
+ * is the one that has changed
+ */
+typealias UserChangeCallback = (Boolean) -> Unit
 
 object UserManager {
 
@@ -39,14 +44,14 @@ object UserManager {
         getAllUser()
 
         auth.addAuthStateListener {
-            //a different uid means user has changed
-
 
             if(auth.currentUser == null){
                 signoutListener?.invoke()
                 user = null
 
-            }else if(user == null || it.uid != user?.id){
+            }
+            //a different uid means user has changed
+            else if(user == null || it.uid != user?.id){
                 user = null
                 setUser()
             }
@@ -67,45 +72,47 @@ object UserManager {
      * The callbacks are in case the call fails in init (maybe due to network)
      * and the result is needed immediately
      */
-    fun setUser(){
+    private fun setUser(newData: User? = null){
         if(user == null){
-            database.reference.child("users").child(auth.uid!!).addValueEventListener(object: ValueEventListener {
 
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    if(snapshot.exists()){
-                        val snapUser = snapshot.getValue(User::class.java)
+            val currentUser = users.find {
+                it.id == auth.uid
+            }
 
-                        user = if(user == null) snapUser!!.copy(id = snapshot.key!!)
-                        else snapUser!!.copy(id = user!!.id, email = user!!.email, phoneNumber = user!!.phoneNumber)
-
-                        userChangeListener.forEach { it.invoke(user!!) }
-                    } else addUserToDb()
+            if(currentUser == null) addUserToDb()
+            else {
+                user = auth.currentUser?.run {
+                    currentUser.copy(id = uid, email = email, phoneNumber = phoneNumber)
                 }
+            }
+        }
 
-                override fun onCancelled(error: DatabaseError) {
-                    Timber.i(error.message)
-                }
-            })
-
-            auth.currentUser?.apply {
-                user = if(user == null) User(id = uid, email = email, phoneNumber = phoneNumber)
-                else user!!.copy(id = uid, email = email, phoneNumber = phoneNumber)
+        if(newData != null){
+            user = auth.currentUser?.run {
+                newData.copy(id = uid, email = email, phoneNumber = phoneNumber)
             }
         }
     }
 
     private fun getAllUser(){
-        database.reference.child("users").addListenerForSingleValueEvent(object: ValueEventListener {
+        database.reference.child("users").addValueEventListener(object: ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if(snapshot.exists() && snapshot.hasChildren()){
 
+                        val userCopy = snapshot.children.map {
+                            it.getValue(User::class.java)!!.copy(id = it.key!!)
+                        }
+
+                    val changedUser = userCopy.filter { !users.contains(it) }
+                    val changedCurrentUser = changedUser.find { it.id == user?.id }
+
                     users.clear()
+                    users.addAll(userCopy)
 
-                    users.addAll(snapshot.children.map {
-                        it.getValue(User::class.java)!!.copy(id = it.key!!)
-                    })
+                    if(user == null) setUser()
+                    else if(changedCurrentUser != null) setUser(changedCurrentUser)
 
-//                    if(user == null) user = users.find { it.id == auth.uid }?.copy(email = auth.currentUser!!.email)
+                    if(changedUser.isNotEmpty()) userChangeListener.forEach { it.invoke(changedCurrentUser != null) }
                 }
             }
 
@@ -114,13 +121,6 @@ object UserManager {
             }
         })
     }
-
-//    fun getUserDetails(onSuccess: (User) -> Unit, onFailed: (String) -> Unit){
-//       if(user != null) onSuccess.invoke(user!!)
-//        else {
-//            setUser(onSuccess, onFailed)
-//        }
-//    }
 
     fun addUserToDb(){
         auth.currentUser!!.let {

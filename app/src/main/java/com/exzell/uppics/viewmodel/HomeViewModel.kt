@@ -1,13 +1,10 @@
 package com.exzell.uppics.viewmodel
 
 import android.app.Application
-import android.content.Context
 import android.content.res.Resources
 import android.net.Uri
 import androidx.core.os.ConfigurationCompat
-import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
@@ -17,7 +14,6 @@ import com.exzell.uppics.UserChangeCallback
 import com.exzell.uppics.UserManager
 import com.exzell.uppics.model.Post
 import com.exzell.uppics.model.User
-import com.exzell.uppics.model.VoteState
 import com.exzell.uppics.model.Votes
 import com.exzell.uppics.utils.deleteFile
 import com.google.firebase.auth.ktx.auth
@@ -33,7 +29,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel(application: Application) : AndroidViewModel(application), UserChangeCallback {
 
     private val context = application.applicationContext
 
@@ -45,7 +41,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
     private val posts: MutableList<Post> = mutableListOf()
 
-    var onUserChange: UserChangeCallback? = null
+    var onUserChange: ((List<User>) -> Unit)? = null
 
     var fileUri: Uri? = null
 
@@ -54,7 +50,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     var clearFileAfter = false
 
     init {
-        userManager.addUserToDb()
+        userManager.addUserChangeListener(this)
     }
 
     fun getPosts(): List<Post> = posts.toList()
@@ -114,14 +110,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 }
     }
 
-    fun update(postId: Long, title: String, desc: String, onComplete: (String) -> Unit){
+    fun update(postId: Long, title: String, desc: String, onComplete: (String) -> Unit) {
         val post = posts.find { it.id == postId }!!
 
         val map = mutableMapOf<String, String>()
 
-        if(title != post.title) map["title"] = title
+        if (title != post.title) map["title"] = title
 
-        if(desc != post.description) map["description"] = desc
+        if (desc != post.description) map["description"] = desc
 
         database.reference
                 .child("posts")
@@ -129,7 +125,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 .child(post.id.toString())
                 .updateChildren(map as Map<String, Any>)
                 .addOnCompleteListener {
-                    if(it.isSuccessful) onComplete.invoke(SUCCESS)
+                    if (it.isSuccessful) onComplete.invoke(SUCCESS)
                     else onComplete.invoke(it.exception?.localizedMessage ?: "Error")
                 }
     }
@@ -182,8 +178,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
                                 //since the temporary file are created just for the post
                                 //it should be cleared after
-                                if(clearFileAfter) {
-                                    if(context.deleteFile(fileUri!!)){
+                                if (clearFileAfter) {
+                                    if (context.deleteFile(fileUri!!)) {
                                         clearFileAfter = false
                                         fileUri = null
                                     }
@@ -207,13 +203,15 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }.maxOrNull() ?: 0
     }
 
+    fun getAllUsers() = userManager.users
+
     fun getUserPic(): String? {
-        val url = userManager?.user?.photoUrl
-        return if(url.isNullOrEmpty()) null else url
+        val url = userManager.user?.photoUrl
+        return if (url.isNullOrEmpty()) null else url
     }
 
     fun getCurrentUser(): User? {
-        return userManager?.user
+        return userManager.user
     }
 
     fun savePostImage(postId: Long, onComplete: (String?) -> Unit) {
@@ -225,33 +223,33 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         Glide.with(context)
                 .downloadOnly()
                 .load(post.imageUrl)
-                .addListener(object: RequestListener<File>{
-            override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<File>?, isFirstResource: Boolean): Boolean {
-                onComplete.invoke(null)
-                return false
-            }
+                .addListener(object : RequestListener<File> {
+                    override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<File>?, isFirstResource: Boolean): Boolean {
+                        onComplete.invoke(null)
+                        return false
+                    }
 
-            override fun onResourceReady(resource: File?, model: Any?, target: Target<File>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
-                return resource?.let {
-                    file.outputStream().write(it.inputStream().run {
-                        val arr = ByteArray(available())
-                        read(arr)
-                        arr
-                    })
+                    override fun onResourceReady(resource: File?, model: Any?, target: Target<File>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
+                        return resource?.let {
+                            file.outputStream().write(it.inputStream().run {
+                                val arr = ByteArray(available())
+                                read(arr)
+                                arr
+                            })
 
-                    onComplete.invoke(file.path)
-                    true
-                } ?: false
-            }
-        })
+                            onComplete.invoke(file.path)
+                            true
+                        } ?: false
+                    }
+                })
                 .submit()
                 .request!!
                 .apply {
-                    if(!isRunning) begin()
+                    if (!isRunning) begin()
                 }
     }
 
-    fun deletePost(postId: Long){
+    fun deletePost(postId: Long) {
         val post = posts.find { it.id == postId }!!
 
         database.reference
@@ -260,11 +258,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 .child(post.id.toString())
                 .removeValue { error, ref ->
 
-                    if(error == null){
+                    if (error == null) {
                         storage.getReferenceFromUrl(post.imageUrl)
                                 .delete()
 
-                    }else Timber.d(error.details)
+                    } else Timber.d(error.details)
                 }
     }
 
@@ -273,7 +271,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         userManager.signout()
     }
 
-    companion object{
+    override fun invoke(isCurrentUser: Boolean) {
+        onUserChange?.invoke(userManager.users)
+    }
+
+    companion object {
         const val SUCCESS = "success"
     }
 }

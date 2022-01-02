@@ -22,8 +22,10 @@ import kotlin.collections.ArrayList
 
 class PostAdapter(private val context: Context,
                   posts: List<Post>,
-                  private val users: List<User>,
                   private val currentUser: User?): ListAdapter<Post, PostAdapter.ViewHolder>(callback) {
+
+    var users = mutableListOf<User>()
+
     companion object{
         val callback = object: DiffUtil.ItemCallback<Post>(){
             override fun areItemsTheSame(oldItem: Post, newItem: Post) = oldItem.id == newItem.id
@@ -82,9 +84,9 @@ class PostAdapter(private val context: Context,
         val post = currentList[position]
 
         if(payloads.isNotEmpty()){
-            val innerList = payloads.find {
+            val innerList = (payloads.find {
                 it is List<*>
-            } as MutableList<Any>
+            } ?: mutableListOf<Any>()) as MutableList<Any>
 
             innerList.addAll(payloads)
 

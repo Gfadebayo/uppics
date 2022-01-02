@@ -6,23 +6,21 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.PopupMenu
-import androidx.fragment.app.Fragment
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityOptionsCompat
-import androidx.core.content.FileProvider
+import androidx.core.view.doOnLayout
 import androidx.core.view.marginBottom
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import com.bumptech.glide.Glide
 import com.exzell.uppics.R
-import com.exzell.uppics.model.Sort
-import com.exzell.uppics.UserManager
 import com.exzell.uppics.adapter.PostAdapter
 import com.exzell.uppics.adapter.itemdecoration.PaddingDecoration
 import com.exzell.uppics.databinding.FragmentHomeBinding
-import com.exzell.uppics.model.Post
+import com.exzell.uppics.model.Sort
 import com.exzell.uppics.utils.checkPermission
 import com.exzell.uppics.utils.createTempFile
 import com.exzell.uppics.utils.getUri
@@ -30,7 +28,6 @@ import com.exzell.uppics.viewmodel.HomeViewModel
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.snackbar.Snackbar
 import java.util.*
-import kotlin.collections.ArrayList
 
 class HomeFragment : Fragment() {
 
@@ -62,39 +59,31 @@ class HomeFragment : Fragment() {
                 .get(HomeViewModel::class.java)
 
         mPictureContract = registerForActivityResult(ActivityResultContracts.TakePicture()) {
-            if(it) launchPostFragment()
+            if (it) launchPostFragment()
             else Toast.makeText(requireContext(), R.string.error_occured, Toast.LENGTH_SHORT).show()
         }
 
-        mPermissionContract = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()){
+        mPermissionContract = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             canTakePicture = it.getOrDefault(Manifest.permission.CAMERA, false)
             canFetchFile = it.getOrDefault(Manifest.permission.READ_EXTERNAL_STORAGE, false)
 
-            if(canTakePicture) takePicture()
-            else if(canFetchFile) fetchFile()
+            if (canTakePicture) takePicture()
+            else if (canFetchFile) fetchFile()
         }
 
-        mFileContract = registerForActivityResult(ActivityResultContracts.GetContent()){
-            if(it != null) {
+        mFileContract = registerForActivityResult(ActivityResultContracts.GetContent()) {
+            if (it != null) {
                 mViewModel.fileUri = it
                 launchPostFragment()
             }
         }
     }
 
-    private fun fetchFile() {
-        mViewModel.clearFileAfter = false
-        val fab = requireActivity().findViewById<View>(R.id.fab_gallery)
-
-        mFileContract.launch("image/*", ActivityOptionsCompat
-                .makeScaleUpAnimation(fab, 0, 0, 0, 0))
-    }
-
     private fun launchPostFragment(postId: Long? = null) {
         findNavController().navigate(R.id.action_frag_home_to_post,
-                if(postId == null) null else Bundle(1).apply {
-            putLong(PostFragment.KEY_ID, postId)
-        })
+                if (postId == null) null else Bundle(1).apply {
+                    putLong(PostFragment.KEY_ID, postId)
+                })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -109,18 +98,18 @@ class HomeFragment : Fragment() {
         mBinding!!.apply {
             recyclerPost.post {
                 val fileFab = requireActivity().findViewById<View>(R.id.twin_fab)
-                val fabTop = fileFab.measuredHeight+fileFab.marginBottom
+                val fabTop = fileFab.measuredHeight + fileFab.marginBottom
 
                 recyclerPost.addItemDecoration(PaddingDecoration(fabTop))
             }
 
-
-            val adapter = PostAdapter(requireContext(), Collections.emptyList(), UserManager.users, mViewModel.getCurrentUser())
+            val adapter = PostAdapter(requireContext(), Collections.emptyList(), mViewModel.getCurrentUser())
+            adapter.users = mViewModel.getAllUsers()
             recyclerPost.adapter = adapter
 
             adapter.onVoteClicked = { isUpvote, postId ->
 
-                mViewModel.update(isUpvote, postId){
+                mViewModel.update(isUpvote, postId) {
                     Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
                 }
             }
@@ -130,13 +119,13 @@ class HomeFragment : Fragment() {
                 createPopMenu(postId, view)
             }
 
-            mViewModel.fetchAllPosts ({
+            mViewModel.fetchAllPosts({
                 indicatorLoading.visibility = View.GONE
 
-                if(it.isEmpty()){
+                if (it.isEmpty()) {
                     textError.visibility = View.VISIBLE
 
-                }else {
+                } else {
 
                     textError.visibility = View.GONE
 
@@ -147,36 +136,45 @@ class HomeFragment : Fragment() {
                 Toast.makeText(requireContext(), it, Toast.LENGTH_SHORT).show()
             })
 
-            requireActivity().findViewById<View>(R.id.fab_camera).setOnClickListener {
-                if(canTakePicture) takePicture()
-                else mPermissionContract.launch(arrayOf(Manifest.permission.CAMERA))
+            mViewModel.onUserChange = {
+                adapter.users = it.toMutableList()
+                adapter.notifyItemRangeChanged(0, adapter.itemCount, PostAdapter.PAYLOAD_USER)
+
+                requireActivity().invalidateOptionsMenu()
             }
 
-            requireActivity().findViewById<View>(R.id.fab_gallery).setOnClickListener {
-                if(canFetchFile) fetchFile()
-                else mPermissionContract.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
+            recyclerPost.doOnLayout {
+                requireActivity().findViewById<View>(R.id.fab_camera)?.setOnClickListener {
+                    if (canTakePicture) takePicture()
+                    else mPermissionContract.launch(arrayOf(Manifest.permission.CAMERA))
+                }
+
+                requireActivity().findViewById<View>(R.id.fab_gallery)?.setOnClickListener {
+                    if (canFetchFile) fetchFile()
+                    else mPermissionContract.launch(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE))
+                }
             }
         }
     }
 
-    private fun createPopMenu(postId: Long, view: View){
+    private fun createPopMenu(postId: Long, view: View) {
         val post = mViewModel.getPosts().find { it.id == postId }!!
 
         PopupMenu(view.context, view).apply {
             inflate(R.menu.popup_more)
 
-            if(mViewModel.getCurrentUser()?.id != post.uid){
+            if (mViewModel.getCurrentUser()?.id != post.uid) {
                 menu.findItem(R.id.action_delete).isEnabled = false
                 menu.findItem(R.id.action_edit).isEnabled = false
             }
 
             setOnMenuItemClickListener {
-                when(it.itemId) {
-                    R.id.action_save -> mViewModel.savePostImage(postId){ path ->
-                        if(it == null){
+                when (it.itemId) {
+                    R.id.action_save -> mViewModel.savePostImage(postId) { path ->
+                        if (it == null) {
                             Toast.makeText(requireContext(), R.string.fail_save_image, Toast.LENGTH_SHORT).show()
 
-                        }else {
+                        } else {
                             Snackbar.make(mBinding!!.root, R.string.download_success, Snackbar.LENGTH_INDEFINITE).setAction(R.string.open) {
                                 Intent(Intent.ACTION_VIEW).apply {
                                     setDataAndType(requireContext().getUri(path!!), "image/*")
@@ -200,16 +198,6 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun takePicture() {
-        val fab = requireActivity().findViewById<View>(R.id.fab_camera)
-        val fileUri = requireContext().createTempFile()
-        mViewModel.fileUri = fileUri
-        mViewModel.clearFileAfter = true
-
-        mPictureContract.launch(fileUri,
-                ActivityOptionsCompat.makeScaleUpAnimation(fab, 0, 0, 0, 0))
-    }
-
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.menu_home, menu)
 
@@ -224,19 +212,21 @@ class HomeFragment : Fragment() {
                     }
                 }
 
+        if (mSort == Sort.UPVOTES) menu.findItem(R.id.action_votes).isChecked = true
+        else if (mSort == Sort.CREATED_TIME) menu.findItem(R.id.action_time).isChecked = true
+        else if (mSort == Sort.TITLE) menu.findItem(R.id.action_title).isChecked = true
+
+        menu.findItem(R.id.action_order).isChecked = isAscending
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
         loadMenuImage(menu.findItem(R.id.action_user))
-
-        if(mSort == Sort.UPVOTES) menu.findItem(R.id.action_votes).setChecked(true)
-        else if(mSort == Sort.CREATED_TIME) menu.findItem(R.id.action_time).setChecked(true)
-        else if (mSort == Sort.TITLE) menu.findItem(R.id.action_title).setChecked(true)
-
-        menu.findItem(R.id.action_order).setChecked(isAscending)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         val adapter: PostAdapter = mBinding!!.recyclerPost.adapter as PostAdapter
 
-        return when(item.itemId){
+        return when (item.itemId) {
 
             R.id.action_user -> {
                 ProfileDialogFragment.getInstance().let {
@@ -276,7 +266,7 @@ class HomeFragment : Fragment() {
             }
 
             R.id.action_logout -> {
-                mViewModel.signout{
+                mViewModel.signout {
                     findNavController().navigate(R.id.action_frag_home_to_login)
                 }
                 true
@@ -286,7 +276,25 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun loadMenuImage(item: MenuItem){
+    private fun fetchFile() {
+        mViewModel.clearFileAfter = false
+        val fab = requireActivity().findViewById<View>(R.id.fab_gallery)
+
+        mFileContract.launch("image/*", ActivityOptionsCompat
+                .makeScaleUpAnimation(fab, 0, 0, 0, 0))
+    }
+
+    private fun takePicture() {
+        val fab = requireActivity().findViewById<View>(R.id.fab_camera)
+        val fileUri = requireContext().createTempFile()
+        mViewModel.fileUri = fileUri
+        mViewModel.clearFileAfter = true
+
+        mPictureContract.launch(fileUri,
+                ActivityOptionsCompat.makeScaleUpAnimation(fab, 0, 0, 0, 0))
+    }
+
+    private fun loadMenuImage(item: MenuItem) {
 
         mViewModel.getUserPic()?.let {
             (item.actionView as ShapeableImageView).apply {
@@ -295,7 +303,7 @@ class HomeFragment : Fragment() {
                         .circleCrop()
                         .into(this)
                         .request!!.let {
-                            if(!it.isRunning) it.begin()
+                            if (!it.isRunning) it.begin()
                         }
             }
         }
