@@ -1,4 +1,4 @@
-package com.exzell.uppics
+package com.exzell.uppics.activity
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -6,8 +6,9 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
-import android.view.Menu
 import android.view.View
+import com.exzell.uppics.R
+import com.exzell.uppics.UserManager
 import com.exzell.uppics.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -34,6 +35,8 @@ class MainActivity : AppCompatActivity() {
             navController.addOnDestinationChangedListener { controller, dest, arguments ->
                 toolbar.visibility = if(dest.id == R.id.frag_login) View.GONE else View.VISIBLE
 
+                if(dest.id == R.id.frag_post) toolbarLayout.setExpanded(true, false)
+
                 twinFab.root.visibility = if(dest.id == R.id.frag_home) View.VISIBLE else View.GONE
             }
         }
@@ -43,5 +46,11 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment)
         return navController.navigateUp(appBarConfiguration)
                 || super.onSupportNavigateUp()
+    }
+
+    override fun onBackPressed() {
+        val dest = findNavController(R.id.nav_host_fragment).currentDestination?.id
+        if(dest == R.id.frag_login || dest == R.id.frag_home) finish()
+        else super.onBackPressed()
     }
 }

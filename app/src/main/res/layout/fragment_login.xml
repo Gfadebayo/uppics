@@ -24,6 +24,7 @@
         android:id="@+id/text_password"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
         android:hint="@string/password"
         app:endIconCheckable="true"
         app:endIconMode="password_toggle">
@@ -55,5 +56,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
+        android:layout_marginTop="12dp"
         android:text="@string/don_t_have_an_account_sign_up"/>
 </LinearLayout>

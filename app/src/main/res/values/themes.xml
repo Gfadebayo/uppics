@@ -1,4 +1,10 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.Splashscreen" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/layer_splash</item>
+    </style>
+
+
     <!-- Base application theme. -->
     <style name="Theme.Base" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="textInputStyle">@style/DefaultTextInputLayout</item>
@@ -9,6 +15,8 @@
         <item name="textAppearanceSubtitle1">@style/Subtitle1.Montserrat</item>
         <item name="textAppearanceCaption">@style/Caption.Montserrat</item>
         <item name="textAppearanceBodyLarge">@style/BodyLarge.Montserrat</item>
+
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.HeadlineSmall.Roboto</item>
     </style>
 
     <style name="Theme.UpPics" parent="Theme.Base">
@@ -44,11 +52,6 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
-    </style>
-
-    <style name="Theme.UpPics.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="Theme.UpPics.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />

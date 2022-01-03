@@ -175,15 +175,6 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), U
                             }.addOnSuccessListener {
 
                                 onComplete.invoke(SUCCESS)
-
-                                //since the temporary file are created just for the post
-                                //it should be cleared after
-                                if (clearFileAfter) {
-                                    if (context.deleteFile(fileUri!!)) {
-                                        clearFileAfter = false
-                                        fileUri = null
-                                    }
-                                }
                             }
                 }
 
@@ -215,10 +206,10 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), U
     }
 
     fun savePostImage(postId: Long, onComplete: (String?) -> Unit) {
-        val parent = context.getExternalFilesDir("downloads")!!
-        val file = File(parent, "${parent.list().size}.png")
-
         val post = posts.find { it.id == postId }!!
+
+        val parent = context.getExternalFilesDir("downloads")!!
+        val file = File(parent, "${post.title}.png")
 
         Glide.with(context)
                 .downloadOnly()
@@ -269,6 +260,18 @@ class HomeViewModel(application: Application) : AndroidViewModel(application), U
     fun signout(onSuccess: () -> Unit) {
         userManager.signoutListener = onSuccess
         userManager.signout()
+    }
+
+
+    fun deleteTempFile() {
+        //since the temporary file are created just for the post
+        //it should be cleared after
+        if (clearFileAfter) {
+            if (context.deleteFile(fileUri!!)) {
+                clearFileAfter = false
+                fileUri = null
+            }
+        }
     }
 
     override fun invoke(isCurrentUser: Boolean) {
