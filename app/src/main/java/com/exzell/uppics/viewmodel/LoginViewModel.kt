@@ -37,6 +37,10 @@ class LoginViewModel: ViewModel() {
                 }
     }
 
+    fun isSignedin(): Boolean{
+        return auth.currentUser != null
+    }
+
     companion object{
         const val MESSAGE_SUCCESS = "UpPics:SUCCESS"
     }

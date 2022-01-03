@@ -2,18 +2,13 @@ package com.exzell.uppics
 
 import android.net.Uri
 import com.exzell.uppics.model.User
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.auth.ktx.userProfileChangeRequest
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
-import com.google.firebase.storage.ktx.storageMetadata
 import timber.log.Timber
 
 /**
@@ -45,26 +40,28 @@ object UserManager {
 
         auth.addAuthStateListener {
 
-            if(auth.currentUser == null){
+            if (auth.currentUser == null) {
                 signoutListener?.invoke()
                 user = null
 
             }
             //a different uid means user has changed
-            else if(user == null || it.uid != user?.id){
+            else if (user == null || it.uid != user?.id) {
                 user = null
                 setUser()
             }
         }
     }
 
-    fun init(){}
+    fun init() {
+        if(auth.uid != null) setUser()
+    }
 
-    fun addUserChangeListener(listener: UserChangeCallback){
+    fun addUserChangeListener(listener: UserChangeCallback) {
         userChangeListener.add(listener)
     }
 
-    fun removeUserChangeListener(listener: UserChangeCallback){
+    fun removeUserChangeListener(listener: UserChangeCallback) {
         userChangeListener.remove(listener)
     }
 
@@ -72,36 +69,39 @@ object UserManager {
      * The callbacks are in case the call fails in init (maybe due to network)
      * and the result is needed immediately
      */
-    private fun setUser(newData: User? = null){
-        if(user == null){
+    private fun setUser(newData: User? = null) {
+        if (user == null) {
 
             val currentUser = users.find {
                 it.id == auth.uid
             }
 
-            if(currentUser == null) addUserToDb()
-            else {
+            if (currentUser == null) {
+                //Auth has some data so we can use that till the DB is ready
+                user = User(id = auth.uid, name = auth.currentUser!!.displayName, email = auth.currentUser!!.email)
+                addUserToDb()
+            } else {
                 user = auth.currentUser?.run {
                     currentUser.copy(id = uid, email = email, phoneNumber = phoneNumber)
                 }
             }
         }
 
-        if(newData != null){
+        if (newData != null) {
             user = auth.currentUser?.run {
                 newData.copy(id = uid, email = email, phoneNumber = phoneNumber)
             }
         }
     }
 
-    private fun getAllUser(){
-        database.reference.child("users").addValueEventListener(object: ValueEventListener {
+    private fun getAllUser() {
+        database.reference.child("users").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                if(snapshot.exists() && snapshot.hasChildren()){
+                if (snapshot.exists() && snapshot.hasChildren()) {
 
-                        val userCopy = snapshot.children.map {
-                            it.getValue(User::class.java)!!.copy(id = it.key!!)
-                        }
+                    val userCopy = snapshot.children.map {
+                        it.getValue(User::class.java)!!.copy(id = it.key!!)
+                    }
 
                     val changedUser = userCopy.filter { !users.contains(it) }
                     val changedCurrentUser = changedUser.find { it.id == user?.id }
@@ -109,10 +109,10 @@ object UserManager {
                     users.clear()
                     users.addAll(userCopy)
 
-                    if(user == null) setUser()
-                    else if(changedCurrentUser != null) setUser(changedCurrentUser)
+                    if (user == null) setUser()
+                    else if (changedCurrentUser != null) setUser(changedCurrentUser)
 
-                    if(changedUser.isNotEmpty()) userChangeListener.forEach { it.invoke(changedCurrentUser != null) }
+                    if (changedUser.isNotEmpty()) userChangeListener.forEach { it.invoke(changedCurrentUser != null) }
                 }
             }
 
@@ -122,13 +122,13 @@ object UserManager {
         })
     }
 
-    fun addUserToDb(){
+    fun addUserToDb() {
         auth.currentUser!!.let {
 
             database.reference.child("users").apply {
-                addListenerForSingleValueEvent(object: ValueEventListener{
+                addListenerForSingleValueEvent(object : ValueEventListener {
                     override fun onDataChange(snapshot: DataSnapshot) {
-                        if(snapshot.hasChild(it.uid)) Timber.d("User already in the database")
+                        if (snapshot.hasChild(it.uid)) Timber.d("User already in the database")
                         else {
                             val user = User(id = it.uid, name = it.displayName, email = it.email, phoneNumber = it.phoneNumber)
                             child(it.uid).setValue(user)
@@ -179,23 +179,22 @@ object UserManager {
                         if (it.isSuccessful) {
                             updateMailAndPhone(email, phone, onComplete)
 
-                        }else onComplete.invoke(false)
+                        } else onComplete.invoke(false)
                     }
 
-        }
-        else onComplete.invoke(true)
+        } else onComplete.invoke(true)
     }
 
-    private fun updateMailAndPhone(email: String? = null, phone: String? = null, onComplete: (Boolean) -> Unit){
+    private fun updateMailAndPhone(email: String? = null, phone: String? = null, onComplete: (Boolean) -> Unit) {
         email?.let {
             auth.currentUser!!.updateEmail(email).addOnCompleteListener {
-                if(it.isSuccessful) updatePhone(phone, onComplete)
+                if (it.isSuccessful) updatePhone(phone, onComplete)
                 else onComplete.invoke(false)
             }
         } ?: updatePhone(phone, onComplete)
     }
 
-    private fun updatePhone(phone: String?, onComplete: (Boolean) -> Unit){
+    private fun updatePhone(phone: String?, onComplete: (Boolean) -> Unit) {
         onComplete.invoke(true)
     }
 
