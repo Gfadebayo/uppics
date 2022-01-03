@@ -15,6 +15,7 @@ import com.exzell.uppics.model.Post
 import com.exzell.uppics.model.Sort
 import com.exzell.uppics.model.User
 import com.exzell.uppics.model.VoteState
+import com.exzell.uppics.utils.shrink
 import timber.log.Timber
 import java.text.SimpleDateFormat
 import java.util.*
@@ -23,7 +24,6 @@ import kotlin.collections.ArrayList
 class PostAdapter(private val context: Context,
                   posts: List<Post>,
                   private val currentUser: User?): ListAdapter<Post, PostAdapter.ViewHolder>(callback) {
-
     var users = mutableListOf<User>()
 
     companion object{
@@ -224,6 +224,8 @@ class PostAdapter(private val context: Context,
 
                 onMoreClicked?.invoke(post.id, it)
             }
+
+            itemPostBinding.textDesc.shrink(itemPostBinding.textDesc.maxLines)
         }
     }
 

@@ -1,12 +1,15 @@
 package com.exzell.uppics.utils
 
+import android.R.attr
 import android.text.Editable
+import android.text.TextUtils
 import android.text.TextWatcher
 import android.view.View
-import android.view.inputmethod.InputMethodManager
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.textfield.TextInputLayout
+import com.google.android.material.textview.MaterialTextView
+
 
 /**
  * Watches the field to detect errors the User might make and display the error
@@ -52,4 +55,23 @@ fun TextInputLayout.setText(text: String){
 fun View.hideSoftKeyboard(){
     ViewCompat.getWindowInsetsController(this)
             ?.hide(WindowInsetsCompat.Type.ime())
+}
+
+fun MaterialTextView.shrink(lines: Int){
+    post {
+        layout?.let {
+            val lineCount: Int = it.lineCount
+            if (it.getEllipsisCount(lineCount - 1) > 0) {
+                setOnClickListener {
+                    if (maxLines < Int.MAX_VALUE) {
+                        maxLines = Int.MAX_VALUE
+                        ellipsize = null
+                    } else {
+                        maxLines = lines
+                        ellipsize = TextUtils.TruncateAt.END
+                    }
+                }
+            }
+        }
+    }
 }

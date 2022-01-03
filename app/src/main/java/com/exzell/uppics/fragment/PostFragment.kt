@@ -106,4 +106,9 @@ class PostFragment: Fragment() {
             }
         }
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mViewModel.deleteTempFile()
+    }
 }
