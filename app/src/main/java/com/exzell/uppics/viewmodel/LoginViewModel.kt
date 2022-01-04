@@ -17,7 +17,6 @@ class LoginViewModel: ViewModel() {
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener {
                     onComplete.invoke(if(!it.isSuccessful) it.exception?.message!! else MESSAGE_SUCCESS)
-                    UserManager.addUserToDb()
                 }
     }
 
@@ -25,7 +24,6 @@ class LoginViewModel: ViewModel() {
         auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener {
                     onComplete.invoke(if(!it.isSuccessful) it.exception?.message!! else MESSAGE_SUCCESS)
-                    UserManager.addUserToDb()
                 }
     }
 

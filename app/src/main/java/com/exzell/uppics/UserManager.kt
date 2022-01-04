@@ -18,7 +18,7 @@ import timber.log.Timber
  */
 typealias UserChangeCallback = (Boolean) -> Unit
 
-object UserManager {
+object UserManager: ValueEventListener {
 
     var user: User? = null
         private set
@@ -95,31 +95,7 @@ object UserManager {
     }
 
     private fun getAllUser() {
-        database.reference.child("users").addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists() && snapshot.hasChildren()) {
-
-                    val userCopy = snapshot.children.map {
-                        it.getValue(User::class.java)!!.copy(id = it.key!!)
-                    }
-
-                    val changedUser = userCopy.filter { !users.contains(it) }
-                    val changedCurrentUser = changedUser.find { it.id == user?.id }
-
-                    users.clear()
-                    users.addAll(userCopy)
-
-                    if (user == null) setUser()
-                    else if (changedCurrentUser != null) setUser(changedCurrentUser)
-
-                    if (changedUser.isNotEmpty()) userChangeListener.forEach { it.invoke(changedCurrentUser != null) }
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Timber.d(error.message)
-            }
-        })
+        database.reference.child("users").addValueEventListener(this)
     }
 
     fun addUserToDb() {
@@ -200,5 +176,29 @@ object UserManager {
 
     fun signout() {
         auth.signOut()
+    }
+
+    override fun onDataChange(snapshot: DataSnapshot) {
+        if (snapshot.exists() && snapshot.hasChildren()) {
+
+            val userCopy = snapshot.children.map {
+                it.getValue(User::class.java)!!.copy(id = it.key!!)
+            }
+
+            val changedUser = userCopy.filter { !users.contains(it) }
+            val changedCurrentUser = changedUser.find { it.id == user?.id }
+
+            users.clear()
+            users.addAll(userCopy)
+
+            if (user == null) setUser()
+            else if (changedCurrentUser != null) setUser(changedCurrentUser)
+
+            if (changedUser.isNotEmpty()) userChangeListener.forEach { it.invoke(changedCurrentUser != null) }
+        }
+    }
+
+    override fun onCancelled(error: DatabaseError) {
+        Timber.d(error.message)
     }
 }
